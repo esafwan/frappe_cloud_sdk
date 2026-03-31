@@ -1,0 +1,1 @@
+# Services endpoint namespaces

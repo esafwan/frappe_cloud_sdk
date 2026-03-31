@@ -23,12 +23,12 @@ class FrappeCloudClient:
         })
         
         # Attach feature namespaces
-        from .sites import Sites
-        from .apps import Apps
-        from .backups import Backups
-        from .domains import Domains
-        from .tracking import Tracking
-        from .database import Database
+        from ..services.sites import Sites
+        from ..services.apps import Apps
+        from ..services.backups import Backups
+        from ..services.domains import Domains
+        from ..services.tracking import Tracking
+        from ..services.database import Database
         
         self.sites = Sites(self)
         self.apps = Apps(self)
