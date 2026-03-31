@@ -22,18 +22,20 @@ class FrappeCloudClient:
             "Content-Type": "application/json"
         })
         
-        # Lazily loaded/attached functional namespaces
-        # These will be mapped incrementally in the final SDK
-        self.sites = None
-        self.apps = None
-        self.backups = None
-        self.domains = None
-        self.tracking = None
-        self.database = None
+        # Attach feature namespaces
+        from .sites import Sites
+        from .apps import Apps
+        from .backups import Backups
+        from .domains import Domains
+        from .tracking import Tracking
+        from .database import Database
         
-    def attach_module(self, name: str, module_instance):
-        """Helper to attach feature modules later in initialization."""
-        setattr(self, name, module_instance)
+        self.sites = Sites(self)
+        self.apps = Apps(self)
+        self.backups = Backups(self)
+        self.domains = Domains(self)
+        self.tracking = Tracking(self)
+        self.database = Database(self)
         
     def _handle_error(self, response: requests.Response):
         """Standardized error handling logic mapping HTTP status codes to custom exceptions."""
