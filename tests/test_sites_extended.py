@@ -92,6 +92,27 @@ def test_sites_restore_calls_correct_endpoint():
     assert result == "job-456"
 
 
+def test_sites_validate_restoration_space_calls_correct_endpoint():
+    client = make_client()
+    client.post = MagicMock(return_value={"message": {"ok": True}})
+    # Regression test: press.api.site.validate_restoration_space_requirements takes three
+    # explicit byte-size ints, not a `files` dict. A prior version of this method posted
+    # {"files": {...}}, which raises a server-side TypeError — confirmed live 2026-07-10.
+    result = client.sites.validate_restoration_space(
+        "agent-test-restore-1", db_file_size=1000, public_file_size=200, private_file_size=50
+    )
+    client.post.assert_called_once_with(
+        "press.api.site.validate_restoration_space_requirements",
+        {
+            "name": "agent-test-restore-1",
+            "db_file_size": 1000,
+            "public_file_size": 200,
+            "private_file_size": 50,
+        },
+    )
+    assert result == {"message": {"ok": True}}
+
+
 def test_sites_domains_calls_correct_endpoint():
     client = make_client()
     client.post = MagicMock(return_value={"message": [{"domain": "example.com"}]})

@@ -159,11 +159,25 @@ class Sites:
         )
         return res.get("message")
 
-    def validate_restoration_space(self, name: str, files: Dict[str, Any]) -> Dict[str, Any]:
-        """Pre-restore dry-run check for available disk space before a restore."""
+    def validate_restoration_space(
+        self, name: str, db_file_size: int, public_file_size: int = 0, private_file_size: int = 0
+    ) -> Dict[str, Any]:
+        """
+        Pre-restore dry-run check for available disk space before a restore.
+
+        Real signature takes three explicit byte sizes, not a `files` dict — confirmed against
+        `press.api.site.validate_restoration_space_requirements` (a prior version of this SDK
+        method posted `{"files": {...}}`, which raises a server-side `TypeError`; fixed
+        2026-07-10 after a live 500).
+        """
         return self.client.post(
             "press.api.site.validate_restoration_space_requirements",
-            {"name": name, "files": files},
+            {
+                "name": name,
+                "db_file_size": db_file_size,
+                "public_file_size": public_file_size,
+                "private_file_size": private_file_size,
+            },
         )
 
     def restore(

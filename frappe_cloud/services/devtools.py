@@ -17,9 +17,12 @@ class DevTools:
     def get_log(self, log_type: str, doc_name: str, log_name: str) -> Optional[List[Any]]:
         """Fetch formatted log entries for a bench/site log file.
 
-        `log_type` is one of the formatter keys press supports (e.g. "bench", "worker",
-        "frappe", "database", "scheduler", "redis", "web.error", "monitor.json", "ipython").
-        `doc_name` is the owning Bench/Site document name; `log_name` is the specific log file.
+        `log_type` is `"site"` or `"bench"` — which owning-document type `doc_name` refers to
+        (NOT a log-format/filename key, as an earlier version of this docstring claimed).
+        `doc_name` is the owning Site/Bench document name; `log_name` is a specific log filename
+        (e.g. `"database.log"`, `"scheduler.log"`) sourced from `Sites.list_logs()`. Confirmed
+        live 2026-07-10 with `log_type="site"` against a real site's `database.log` (117 entries
+        returned).
         """
         res = self.client.post(
             "press.api.log_browser.get_log",
