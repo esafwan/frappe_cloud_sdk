@@ -1,41 +1,68 @@
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 import requests
 
 from .exceptions import APIError, AuthenticationError, ValidationError
+
+if TYPE_CHECKING:
+    from .auth import AuthStrategy
 
 logger = logging.getLogger(__name__)
 
 class FrappeCloudClient:
     """Core client for interacting with Frappe Cloud APIs."""
-    
-    def __init__(self, api_key: str, api_secret: str, base_url: str = "https://cloud.frappe.io"):
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        api_secret: Optional[str] = None,
+        base_url: str = "https://cloud.frappe.io",
+        auth: Optional["AuthStrategy"] = None,
+        manifest_path: Optional[str] = None,
+    ):
+        from .auth import ApiKeyAuth
+
+        if auth is None:
+            if not api_key or not api_secret:
+                raise ValueError("Either (api_key and api_secret) or an explicit `auth` strategy must be provided")
+            auth = ApiKeyAuth(api_key, api_secret)
+
         self.api_key = api_key
         self.api_secret = api_secret
         self.base_url = base_url.rstrip("/")
-        
+        self.auth = auth
+
         # Configure a standard HTTP session
         self.session = requests.Session()
         self.session.headers.update({
-            "Authorization": f"token {self.api_key}:{self.api_secret}",
             "Accept": "application/json",
             "Content-Type": "application/json"
         })
-        
-        # Attach feature namespaces
+        self.auth.apply(self.session)
+
+        # Agent resource manifest / safety-gate (Agent Resource Safety Rules). Optional: only
+        # constructed when a manifest_path is given, so existing callers are unaffected.
+        self.manifest = None
+        if manifest_path:
+            from .manifest import ResourceManifest
+            self.manifest = ResourceManifest(path=manifest_path)
+
+        # Attach feature namespaces. App/backup/domain operations live only on `sites` —
+        # the original Apps/Backups/Domains services duplicated this and were removed
+        # (pre-1.0, no back-compat needed): `sites.*` is the version that was live-verified.
         from ..services.sites import Sites
-        from ..services.apps import Apps
-        from ..services.backups import Backups
-        from ..services.domains import Domains
         from ..services.tracking import Tracking
         from ..services.database import Database
-        
+        from ..services.benches import Bench
+        from ..services.servers import Server
+        from ..services.devtools import DevTools
+
         self.sites = Sites(self)
-        self.apps = Apps(self)
-        self.backups = Backups(self)
-        self.domains = Domains(self)
         self.tracking = Tracking(self)
         self.database = Database(self)
+        self.benches = Bench(self)
+        self.servers = Server(self)
+        self.devtools = DevTools(self)
         
     def _handle_error(self, response: requests.Response):
         """Standardized error handling logic mapping HTTP status codes to custom exceptions."""

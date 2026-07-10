@@ -1,0 +1,4 @@
+.env
+discovery/captures/*.raw.json
+__pycache__/
+.pytest_cache/
